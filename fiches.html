@@ -212,11 +212,11 @@ body.mode-sv #autoSection .btn.primary:hover{background:var(--green-dark);border
   <div class="tabs"><button class="tab active" data-tab="editor">Éditeur</button><button class="tab" data-tab="library">Fiches sauvegardées</button></div>
   <div id="editorTab">
     <div class="mode-switch"><button type="button" class="mode-btn active" data-mode="standard">🏷️ Affiche standard</button><button type="button" class="mode-btn" data-mode="secondevie">♻️ Seconde Vie</button></div>
-    <div class="section" id="autoSection" style="border-color:var(--red)"><div class="section-title" style="background:#fff5f5"><span>⚡ Génération automatique par référence</span></div><div class="section-body">
-      <div class="hint" style="margin-bottom:10px">Tapez la référence du produit puis « Générer » : marque, classe énergie, catégorie, caractéristiques, étiquette énergie officielle et fiche produit se remplissent toutes seules depuis EPREL puis Icecat. EPREL reste prioritaire pour l’énergie officielle ; Icecat élargit la couverture aux références et au petit électroménager. Le prix reste à saisir (il dépend de vous).</div>
-      <div class="field"><label>Référence du produit <span style="font-weight:400;color:#888">— tapez même une partie, les suggestions apparaissent</span></label>
+    <div class="section" id="autoSection" style="border-color:var(--red)"><div class="section-title" style="background:#fff5f5"><span>⚡ Recherche et génération automatique</span></div><div class="section-body">
+      <div class="hint" style="margin-bottom:10px">Recherchez avec une référence ou avec le nom du produit, par exemple « lave-linge Bosch » ou « four Whirlpool pyrolyse ». Sélectionnez le bon modèle dans les suggestions : marque, énergie, catégorie et caractéristiques se rempliront depuis EPREL puis Icecat. Le prix reste à saisir.</div>
+      <div class="field"><label>Référence ou nom du produit <span style="font-weight:400;color:#888">— les suggestions apparaissent automatiquement</span></label>
         <div style="position:relative">
-          <div class="brand-picker"><input id="autoRef" autocomplete="off" placeholder="ex : KGN39VLEB, ou juste « 39VL », « bosch », « WAN28 »…"><button class="btn primary" id="autoFillBtn">Générer</button></div>
+          <div class="brand-picker"><input id="autoRef" autocomplete="off" placeholder="ex : KGN39VLEB ou lave-linge Bosch"><button class="btn primary" id="autoFillBtn">Rechercher</button></div>
           <div id="autoSuggest" style="display:none;position:fixed;z-index:1000;background:#fff;border:1px solid #d7dbe1;border-radius:10px;box-shadow:0 10px 28px rgba(0,0,0,.14);max-height:300px;overflow-y:auto"></div>
         </div>
       </div>
@@ -1973,7 +1973,7 @@ async function autoFill(refArg,groupArg){
  }finally{btn.disabled=false;btn.textContent='Générer'}
 }
 /* ---- Autocomplétion : suggestions de références EPREL + Icecat en direct ---- */
-let suggestTimer=null,suggestSeq=0;
+let suggestTimer=null,suggestSeq=0,currentSuggestions=[];
 function hideSuggest(){const b=$('autoSuggest');if(b){b.style.display='none';b.innerHTML=''}}
 // Le menu est en position:fixed pour ne pas être coupé par les conteneurs
 // (overflow) : on le place sous le champ et on limite sa hauteur à l'écran.
@@ -1987,9 +1987,10 @@ function positionSuggest(){
 }
 function renderSuggest(list){
  const box=$('autoSuggest');if(!box)return;
- if(!list||!list.length){hideSuggest();return}
+ currentSuggestions=Array.isArray(list)?list:[];
+ if(!currentSuggestions.length){hideSuggest();return}
  box.innerHTML='';
- list.forEach(s=>{
+ currentSuggestions.forEach(s=>{
   const it=document.createElement('div');
   it.style.cssText='padding:8px 12px;cursor:pointer;border-bottom:1px solid #f0f2f5;display:flex;justify-content:space-between;gap:10px;align-items:center';
   if(s.relevant===false)it.style.opacity='.5';
@@ -1997,8 +1998,9 @@ function renderSuggest(list){
   const src=s.source?`<span style="font-weight:800;color:${s.source==='Icecat'?'#5b3abf':'#0b6b3a'}">${esc(s.source)}</span>`:'';
   const cls=s.energy?`<span style="font-weight:800;color:#0b6b3a">classe ${esc(s.energy)}</span>`:'';
   const name=(s.title||s.modelIdentifier||'').trim();
-  const sub=(s.source==='Icecat'&&(name||s.categoryName))?`<div style="color:#8a8f98;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:360px">${esc(name.slice(0,72))}${s.categoryName?' · '+esc(s.categoryName):''}</div>`:'';
-  it.innerHTML=`<span style="min-width:0"><strong>${esc(s.reference)}</strong> <span style="color:#666">${esc(s.brand)}</span>${sub}</span><span style="display:flex;gap:8px;align-items:center;white-space:nowrap">${src}${cls}</span>`;
+  const details=[name!==s.reference?name:'',s.categoryName||s.category].filter(Boolean).join(' · ');
+  const sub=details?`<div style="color:#8a8f98;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:360px">${esc(details.slice(0,100))}</div>`:'';
+  it.innerHTML=`<span style="min-width:0"><strong>${esc(s.brand||'')}</strong> <span style="color:#444">${esc(s.reference)}</span>${sub}</span><span style="display:flex;gap:8px;align-items:center;white-space:nowrap">${src}${cls}</span>`;
   it.onmousedown=e=>{e.preventDefault();$('autoRef').value=s.reference;autoFill(s.reference,s.group)};
   box.appendChild(it)
  });
@@ -2006,15 +2008,26 @@ function renderSuggest(list){
  positionSuggest()
 }
 async function fetchSuggest(q){
- if(!q||q.trim().length<3){hideSuggest();return}
+ if(!q||q.trim().length<3){currentSuggestions=[];hideSuggest();return []}
  const seq=++suggestSeq;
  try{
   const data=await (await fetch('/api/search?q='+encodeURIComponent(q.trim()))).json();
   if(seq!==suggestSeq)return;                 // réponse périmée
-  renderSuggest(data&&data.results)
- }catch(e){hideSuggest()}
+  renderSuggest(data&&data.results);
+  return currentSuggestions
+ }catch(e){currentSuggestions=[];hideSuggest();return []}
 }
-$('autoFillBtn').onclick=()=>autoFill();
+$('autoFillBtn').onclick=async()=>{
+ const q=($('autoRef').value||'').trim();
+ if(!q){setAutoStatus('Tapez une référence ou le nom d’un produit.','error');return}
+ const exact=currentSuggestions.find(s=>String(s.reference||'').toLowerCase()===q.toLowerCase());
+ if(exact){autoFill(exact.reference,exact.group);return}
+ const list=await fetchSuggest(q);
+ const nowExact=list&&list.find(s=>String(s.reference||'').toLowerCase()===q.toLowerCase());
+ if(nowExact){autoFill(nowExact.reference,nowExact.group);return}
+ if(list&&list.length){setAutoStatus('Plusieurs produits correspondent : sélectionnez le bon modèle dans la liste.','');return}
+ autoFill(q)
+};
 $('autoRef').addEventListener('input',e=>{clearTimeout(suggestTimer);const q=e.target.value;suggestTimer=setTimeout(()=>fetchSuggest(q),350)});
 $('autoRef').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();hideSuggest();autoFill()}else if(e.key==='Escape'){hideSuggest()}});
 $('autoRef').addEventListener('blur',()=>setTimeout(hideSuggest,180));

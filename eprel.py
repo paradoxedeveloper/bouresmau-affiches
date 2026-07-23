@@ -181,6 +181,8 @@ _BRAND_STOP = {
     "litres", "litre", "cm", "noir", "blanc", "gris", "inox", "led", "energie",
     "classe", "avec", "sans", "pouces", "watt", "watts", "silver", "smart", "grand",
     "petit", "double", "simple", "froid", "ventile", "statique", "no", "frost",
+    "pyrolyse", "catalyse", "induction", "frontal", "top", "integrable",
+    "kg", "rpm", "tours", "capacite", "volume", "connecte", "connectee",
 }
 _CATEGORY_TOKENS = {t for key in _CATEGORY_WORDS
                     for t in re.findall(r"[a-z]+", key)} | {
@@ -1664,6 +1666,8 @@ def search(query, limit=8):
         # les accessoires : la recherche par NOM devient utilisable.
         raw = _icecat_search_once(session, q, limit=max(limit * 3, 18))
         for h in _icecat_rank(q, raw):
+            if len(out) >= limit:
+                break
             ref = (h.get("mpn") or h.get("name") or "").strip()
             brand = (h.get("brand") or "").strip()
             if not ref:
