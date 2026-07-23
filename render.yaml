@@ -11,3 +11,9 @@ services:
         value: 0.0.0.0
       - key: PYTHON_VERSION
         value: 3.13.5
+      - key: BOURESMAU_USER
+        value: bouresmau
+      - key: BOURESMAU_PASSWORD
+        sync: false
+      - key: BOURESMAU_AUTH_SECRET
+        generateValue: true
