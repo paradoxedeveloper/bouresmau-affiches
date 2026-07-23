@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: bouresmau-affiches
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: python serveur_fiches.py
+    healthCheckPath: /health
+    envVars:
+      - key: BOURESMAU_HOST
+        value: 0.0.0.0
+      - key: PYTHON_VERSION
+        value: 3.13.5

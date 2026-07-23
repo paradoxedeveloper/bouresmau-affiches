@@ -1,0 +1,44 @@
+METTRE BOURESMAU AFFICHES EN LIGNE AVEC RENDER
+==============================================
+
+RÉSULTAT
+--------
+Le logiciel sera accessible avec une adresse de ce type :
+
+https://bouresmau-affiches.onrender.com
+
+Les utilisateurs n'auront rien à télécharger et pourront l'utiliser depuis
+Windows, macOS, Linux, iPhone, iPad et Android.
+
+ÉTAPES
+------
+1. Créer gratuitement un compte sur https://github.com
+2. Créer un nouveau dépôt privé.
+3. Envoyer dans ce dépôt le contenu de Bouresmau-Web-Render.zip.
+4. Créer un compte sur https://render.com
+5. Dans Render, cliquer New > Blueprint.
+6. Connecter le dépôt GitHub.
+7. Render détectera automatiquement render.yaml.
+8. Valider avec Deploy Blueprint.
+
+Render installera Python et les modules tout seul. Il fournira une adresse HTTPS
+publique, sans certificat à configurer.
+
+MISES À JOUR
+------------
+Après une modification, remplacer les fichiers dans le dépôt GitHub. Render
+reconstruira automatiquement le site.
+
+PLAN GRATUIT
+------------
+Le plan gratuit convient pour les essais. Après 15 minutes sans visite, le
+serveur s'endort. La première ouverture suivante peut prendre environ une minute.
+
+Pour un usage quotidien en magasin, choisir une petite instance payante afin
+d'éviter ce délai de réveil.
+
+DONNÉES
+-------
+Les fiches enregistrées restent dans le stockage local du navigateur de chaque
+utilisateur. Elles ne sont pas automatiquement partagées entre les ordinateurs.
+Utiliser l'export/import JSON pour transférer une sauvegarde.
